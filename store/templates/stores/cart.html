@@ -39,7 +39,20 @@
                         <div style="flex:2"><img class="row-image" src="{{ item.item.imageURL }}"></div>
                         <div style="flex:2"><p>{{ item.item.name }}</p></div>
                         <div style="flex:1"><p>₹{{ item.item.price|floatformat:2 }}</p></div>
-                        <div style="flex:2"><p>{{ item.order_type }}</p></div>
+                        <div style="flex:2">
+                            <p>
+                                <select name="order_type" class="form-container" id="id_order_type">
+                                    <option value="" selected="">---------</option>
+
+                                    <option value="DINE IN" type="submit">DINE IN</option>
+
+                                    <option value="HOME DELIVERY" type="submit" selected>HOME DELIVERY</option>
+
+                                </select>
+
+                            </p>
+                        </div>
+
                         <div style="flex:1">
                             <p class="quantity">{{ item.quantity }}</p>
                             <div class="quantity">
@@ -47,7 +60,7 @@
                                      class="chg-quantity update-cart" src="{% static  'images/arrow-up.png' %}">
 
                                 <img data-product="{{ item.item.id }}" data-action="remove"
-                                     class="chg-quantity update-cart"  src="{% static  'images/arrow-down.png' %}">
+                                     class="chg-quantity update-cart" src="{% static  'images/arrow-down.png' %}">
                             </div>
                         </div>
                         <div style="flex:1"><p>₹{{ item.get_total|floatformat:2 }}</p></div>
