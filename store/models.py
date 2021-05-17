@@ -17,6 +17,7 @@ class Item(models.Model):
     CATEGORY = (
         ('VEG', 'VEG'),
         ('NON-VEG', 'NON-VEG'),
+        ('SNACKS', 'SNACKS'),
     )
     name = models.CharField(max_length=200, null=True)
     price = models.DecimalField(null=True, max_digits=10, decimal_places=2)
