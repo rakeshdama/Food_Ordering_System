@@ -8,6 +8,8 @@ class Customer(models.Model):
     name = models.CharField(max_length=100, null=True)
     email = models.EmailField(max_length=100, null=True)
     phone = models.CharField(max_length=100, null=True)
+    profile_pic = models.ImageField(null=True, blank=True, default="user.jpg")
+    date_created = models.DateTimeField(auto_now_add=True, null=True)
 
     def __str__(self):
         return str(self.name)
@@ -19,11 +21,16 @@ class Item(models.Model):
         ('NON-VEG', 'NON-VEG'),
         ('SNACKS', 'SNACKS'),
     )
+    AVA = (
+        ('Yes', 'Yes'),
+        ('No', 'No'),
+    )
     name = models.CharField(max_length=200, null=True)
     price = models.DecimalField(null=True, max_digits=10, decimal_places=2)
     category = models.CharField(max_length=200, null=True, choices=CATEGORY)
     description = models.CharField(max_length=500, null=True)
     image = models.ImageField(null=True, blank=True)
+    available = models.CharField(max_length=200, null=True, choices=AVA, default=AVA[0][0])
 
     def __str__(self):
         return self.name
@@ -38,17 +45,16 @@ class Item(models.Model):
 
 
 class Order(models.Model):
-    # STATUS = (
-    #     ('Pending', 'Pending'),
-    #     ('Out for delivery', 'Out for delivery'),
-    #     ('Delivered', 'Delivered'),
-    # )
+    STATUS = (
+        ('Pending', 'Pending'),
+        ('Delivered', 'Delivered'),
+    )
     customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, blank=True, null=True)
     date_ordered = models.DateTimeField(auto_now_add=True)
     complete = models.BooleanField(default=False, null=True, blank=False)
     transaction_id = models.CharField(max_length=200, null=True)
 
-    # status = models.CharField(max_length=200, null=True, choices=STATUS)
+    status = models.CharField(max_length=200, null=True, choices=STATUS, default=STATUS[0][0])
 
     def __str__(self):
         return str(self.id)
@@ -77,14 +83,18 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     ORDER_TYPE = (
-        ('DINE IN', 'DINE IN'),
         ('HOME DELIVERY', 'HOME DELIVERY'),
+        ('DINE IN', 'DINE IN'),
+
     )
     item = models.ForeignKey(Item, on_delete=models.SET_NULL, null=True)
     order = models.ForeignKey(Order, on_delete=models.SET_NULL, blank=True, null=True)
     quantity = models.IntegerField(default=0, null=True, blank=True)
-    order_type = models.CharField(max_length=100, null=True, blank=True, choices=ORDER_TYPE)
+    order_type = models.CharField(max_length=100, null=True, blank=True, choices=ORDER_TYPE, default=ORDER_TYPE[0][0])
     date_added = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return str(self.item)
 
     @property
     def get_total(self):

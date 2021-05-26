@@ -1,15 +1,77 @@
 import datetime
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 import json
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import authenticate, login, logout
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import Group
 
 from .models import *
+from .forms import *
+from .filters import *
+from .decorators import unauthenticated_user, allowed_users, admin_only
 
 
 # Create your views here.
 
+
 def menu(request):
+    # now = int((datetime.now()).strftime("%H"))
+
+    if request.user.is_authenticated:
+        customer = request.user.customer
+        order, created = Order.objects.get_or_create(customer=customer, complete=False)
+        items = order.orderitem_set.all()
+        cartItems = order.get_cart_items
+
+    else:
+        order = {'get_cart_total': 0, 'get_cart_items': 0, 'order_type': False}
+        items = []
+        cartItems = order['get_cart_items']
+
+    products = Item.objects.filter(available='Yes')
+    myFilter = MenuFilter(request.GET, queryset=products)
+    products = myFilter.qs
+
+    context = {'products': products, 'cartItems': cartItems,
+               'myFilter': myFilter}
+    return render(request, 'stores/menu.html', context)
+
+
+@unauthenticated_user
+def register(request):
+    if request.user.is_authenticated:
+        customer = request.user.customer
+        order, created = Order.objects.get_or_create(customer=customer, complete=False)
+        items = order.orderitem_set.all()
+        cartItems = order.get_cart_items
+
+    else:
+        order = {'get_cart_total': 0, 'get_cart_items': 0, 'order_type': False}
+        items = []
+        cartItems = order['get_cart_items']
+
+        form = CreateUserForm()
+
+    if request.method == 'POST':
+        form = CreateUserForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            username = form.cleaned_data.get('username')
+
+            messages.success(request, 'Account was created ')
+
+            return redirect('login')
+
+    context = {'cartItems': cartItems, 'form': form}
+    return render(request, 'stores/register.html', context)
+
+
+@unauthenticated_user
+def loginPage(request):
     if request.user.is_authenticated:
         customer = request.user.customer
         order, created = Order.objects.get_or_create(customer=customer, complete=False)
@@ -20,11 +82,28 @@ def menu(request):
         items = []
         cartItems = order['get_cart_items']
 
-    products = Item.objects.all()
-    context = {'products': products, 'cartItems': cartItems}
-    return render(request, 'stores/menu.html', context)
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            return redirect('menu')
+        else:
+            messages.info(request, 'Username Or Password is Incorrect')
+
+    context = {'cartItems': cartItems}
+    return render(request, 'stores/login.html', context)
 
 
+def logoutUser(request):
+    logout(request)
+    return redirect('menu')
+
+
+@login_required(login_url='login')
 def cart(request):
     if request.user.is_authenticated:
         customer = request.user.customer
@@ -40,6 +119,7 @@ def cart(request):
     return render(request, 'stores/cart.html', context)
 
 
+@login_required(login_url='login')
 def checkout(request):
     if request.user.is_authenticated:
         customer = request.user.customer
@@ -73,8 +153,8 @@ def updateItem(request):
     productId = data['productId']
     action = data['action']
 
-    print('Action:', action)
-    print('productId:', productId)
+    # print('Action:', action)
+    # print('productId:', productId)
 
     customer = request.user.customer
     product = Item.objects.get(id=productId)
@@ -121,3 +201,156 @@ def processOrder(request):
     else:
         print("User is not logged in..")
     return JsonResponse('Payment Complete', safe=False)
+
+
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['admin'])
+def dashboard(request):
+    orders = Order.objects.all()
+    customer = Customer.objects.all()
+    # total_customers = customer.count()
+    total_orders = Order.objects.all().count()
+    if total_orders != 0:
+        total_orders = total_orders - 1
+    delivered = Order.objects.all().filter(status='Delivered').count()
+
+    pending = Order.objects.all().filter(status='Pending').count()
+    if pending != 0:
+        pending = pending - 1
+
+    context = {'orders': orders, 'customers': customer,
+               'total_orders': total_orders, 'delivered': delivered, 'pending': pending}
+    return render(request, 'stores/dashboard.html', context)
+
+
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['admin'])
+def items(request):
+    products = Item.objects.all()
+    context = {'products': products}
+    return render(request, 'stores/items.html', context)
+
+
+# @login_required(login_url='login')
+# @allowed_users(allowed_roles=['admin'])
+# def orders(request):
+#     orders = OrderItem.objects.all()
+#     customer = Customer.objects.all()
+#     context = {'orders': orders, 'customers': customer}
+#     return render(request, 'stores/order.html', context)
+
+
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['admin'])
+def customer(request, pk):
+    customer = Customer.objects.get(id=pk)
+    orders = customer.order_set.all()
+    ord = orders.exclude(customer__deliveryinfo__address='None')
+    order_count = orders.count()
+    if order_count != 0:
+        order_count = order_count - 1
+
+    myFilter = OrderFilter(request.GET, queryset=orders)
+    orders = myFilter.qs
+
+    context = {'customer': customer, 'orders': ord,
+               'order_count': order_count, 'myFilter': myFilter}
+    return render(request, 'stores/customer.html', context)
+
+
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['admin'])
+def updateOrder(request, pk):
+    order = Order.objects.get(id=pk)
+    form = OrderForm(instance=order)
+
+    if request.method == 'POST':
+        form = OrderForm(request.POST, instance=order)
+        if form.is_valid():
+            form.save()
+            return redirect('/admin')
+    context = {'form': form, 'ord': order}
+    return render(request, 'stores/order_item.html', context)
+
+
+# def orderType(request, pk):
+#     order = OrderItem.objects.get(id=pk)
+#     form = OrderType(instance=order)
+#     if request.method == 'POST':
+#         form = OrderType(request.POST, instance=order)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('/cart')
+#
+#     context = {'form': form}
+#     return render(request, 'stores/order_item.html', context)
+
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['admin'])
+def deleteOrder(request, pk):
+    order = Order.objects.get(id=pk)
+    if request.method == 'POST':
+        order.delete()
+        return redirect('/admin')
+    context = {'item': order}
+    return render(request, 'stores/deleteItem.html', context)
+
+
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['admin'])
+def addItem(request):
+    form = ItemForm()
+    if request.method == 'POST':
+        form = ItemForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('/admin/items')
+    context = {'form': form}
+    return render(request, 'stores/order_item.html', context)
+
+
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['admin'])
+def updateitem(request, pk):
+    item = Item.objects.get(id=pk)
+    form = ItemForm(instance=item)
+
+    if request.method == 'POST':
+        form = ItemForm(request.POST, request.FILES, instance=item)
+        if form.is_valid():
+            form.save()
+            return redirect('/admin/items')
+    context = {'form': form, 'item': item}
+    return render(request, 'stores/order_item.html', context)
+
+
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['customer', 'admin'])
+def userPage(request):
+    orders = request.user.customer.order_set.all()
+    total_orders = orders.count()
+    if total_orders != 0:
+        total_orders = total_orders - 1
+    delivered = orders.filter(status='Delivered').count()
+
+    pending = orders.filter(status='Pending').count()
+    if pending != 0:
+        pending = pending - 1
+    context = {'orders': orders, 'total_orders': total_orders,
+               'delivered': delivered, 'pending': pending}
+    return render(request, 'stores/user.html', context)
+
+
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['customer'])
+def account(request):
+    customer = request.user.customer
+    form = CustomerForm(instance=customer)
+
+    if request.method == 'POST':
+        form = CustomerForm(request.POST, request.FILES, instance=customer)
+        if form.is_valid():
+            form.save()
+        return redirect('account')
+    context = {'form': form}
+    return render(request, 'stores/account.html', context)

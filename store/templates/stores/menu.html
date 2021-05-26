@@ -5,7 +5,15 @@
     <hr>
     <h3 style="display: inline-flex"><strong>Eat what makes you happy! </strong></h3>
     <hr>
+    <form method="get">
+
+        {{ myFilter.form }}
+        &nbsp;&nbsp;
+        <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+
     <div class="row">
+
         {% for product in products %}
 
             <div class="col-lg-4">
