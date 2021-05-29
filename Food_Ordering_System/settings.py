@@ -133,4 +133,4 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'rakeshd0554@gmail.com'
 # I need to remove password before uploading into git
-EMAIL_HOST_PASSWORD = 'R@kesh Royal'
+EMAIL_HOST_PASSWORD = '*'
