@@ -18,13 +18,21 @@
                 <a class="nav-link" href="{% url 'about' %}">About Us <span class="sr-only">(current)</span></a>
             </li>
 
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <form class="form-inline my-2 my-lg-0" action="{% url 'search' %}">
+                <input name="q" id="search-input" class="form-control mr-sm-2" type="search" placeholder="Search"
+                       aria-label="Search">
+                <button class="btn btn-outline-success" type="submit">Search</button>
+            </form>
+
         </ul>
 
 
         <div class="form-inline my-2 my-lg-0">
 
             {#            <form class="form-inline my-2 my-lg-0">#}
-            {#                <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">#}
+            {#                <input name="q" id="search-input" class="form-control mr-sm-2" type="search" placeholder="Search"#}
+            {#                       aria-label="Search">#}
             {#                <button class="btn btn-outline-success" type="submit">Search</button>#}
             {#            </form>&nbsp;&nbsp;&nbsp;&nbsp;#}
 
@@ -42,8 +50,18 @@
 
 
                             {% endif %}
-                            <a class="dropdown-item" href="{% url 'account' %}">Profile</a>
-                            <a class="dropdown-item" href="{% url 'user-page' %}">Orders</a>
+                            {% if request.user.is_staff %}
+                                <a class="dropdown-item"
+                                   href="{% url 'customer' request.user.customer.id %}">Profile</a>
+                            {% else %}
+                                <a class="dropdown-item" href="{% url 'account' %}">Profile</a>
+
+                            {% endif %}
+                            {% if request.user.is_staff %}
+                                <a class="dropdown-item" href="{% url 'orders' %}">Orders</a>
+                            {% else %}
+                                <a class="dropdown-item" href="{% url 'user-page' %}">Orders</a>
+                            {% endif %}
                             <a class="dropdown-item" href="{% url 'logout' %}">Logout</a>
 
                         {% endif %}

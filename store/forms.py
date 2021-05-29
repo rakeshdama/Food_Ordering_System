@@ -11,6 +11,12 @@ class ItemForm(ModelForm):
         fields = '__all__'
 
 
+class OrderType(ModelForm):
+    class Meta:
+        model = OrderItem
+        fields = ['order_type']
+
+
 class OrderForm(ModelForm):
     class Meta:
         model = Order

@@ -9,7 +9,7 @@
             <div class="card card-body">
                 <h5>Customer: {{ customer.name }}</h5>
                 <hr>
-                <a class="btn btn-outline-info  btn-sm btn-block" href="">Update Customer</a>
+                <a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'account' %}">Update Customer</a>
                 <a class="btn btn-outline-info  btn-sm btn-block" href="">View</a>
 
             </div>
@@ -40,7 +40,7 @@
             <div class="card card-body">
                 <form method="get">
 
-                    {{ myFilter.form }}
+                    {{ myFilter.form.as_p }}
 
                     <button class="btn btn-primary" type="submit">Search</button>
                 </form>
@@ -69,7 +69,11 @@
                         {% if order.deliveryinfo_set.first != 'None' %}
 
                             <tr>
-                                <td>{{ order.orderitem_set.first }}</td>
+                                <td>
+                                    {% for i in order.orderitem_set.all %}
+                                        {{ i }},
+                                    {% endfor %}
+                                </td>
                                 <td>{{ order.date_ordered }}</td>
                                 <td>{{ order.deliveryinfo_set.first }}</td>
                                 <td>{{ order.status }}</td>

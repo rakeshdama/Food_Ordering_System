@@ -17,8 +17,12 @@
 
                     {% for order in orders %}
                         <tr>
-                            <td>{{ order.orderitem_set.first }}</td>
-                            <td>{{ order.date_ordered }}</td>
+                            <td>
+                                {% for i in order.orderitem_set.all %}
+                                    {{ i }},
+                                {% endfor %}
+                            </td>
+                            <td>{{ order.date_ordered|date }}</td>
                             <td>{{ order.deliveryinfo_set.first }}</td>
                             <td>{{ order.status }}</td>
 
