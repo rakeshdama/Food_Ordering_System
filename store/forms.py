@@ -2,7 +2,22 @@ from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
 from django.contrib.auth.models import User
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from .models import *
+
+
+class BootstrapStylesMixin:
+    form_fields = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if self.form_fields:
+            for fieldname in self.form_fields:
+                self.fields[fieldname].widget.attrs = {'class': 'form-control'}
+
+        else:
+            raise ValueError('The form_fields should be set')
 
 
 class ItemForm(ModelForm):
@@ -34,3 +49,7 @@ class CustomerForm(ModelForm):
         model = Customer
         fields = '__all__'
         exclude = ['user']
+
+
+class MyPasswordChangeForm(BootstrapStylesMixin, PasswordChangeForm):
+    form_fields = ['old_password', 'new_password1', 'new_password2']

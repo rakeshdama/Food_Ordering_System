@@ -61,6 +61,7 @@ def register(request):
         if form.is_valid():
             user = form.save()
             username = form.cleaned_data.get('username')
+            email = form.cleaned_data.get('email')
 
             messages.success(request, 'Account was created ')
 
@@ -370,8 +371,8 @@ def search(request):
         items = []
         cartItems = order['get_cart_items']
 
-    q = request.GET['q']
-    products = Item.objects.filter(available='Yes', name__icontains=q)
+    query = request.GET['query']
+    products = Item.objects.filter(available='Yes', name__icontains=query)
     print(products)
     myFilter = MenuFilter(request.GET, queryset=products)
     products = myFilter.qs
