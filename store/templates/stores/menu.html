@@ -9,10 +9,11 @@
 
         {{ myFilter.form }}
         &nbsp;&nbsp;
-        <button class="btn btn-primary" type="submit">Search</button>
+        <button class="btn btn-primary" type="submit">Select</button>
     </form>
 
     <div class="row">
+    <script>console.log({{ request.user }})</script>
 
         {% for product in products %}
 
